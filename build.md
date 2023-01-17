@@ -1,18 +1,18 @@
 CLI: revanced-cli-2.20.0-all.jar  
-Integrations: revanced-integrations-0.91.0-v0.91.1.apk  
-Patches: revanced-patches-2.151.0.jar  
+Integrations: revanced-integrations-0.93.0.apk  
+Patches: revanced-patches-2.155.0.jar  
 
-### [2.151.0](https://github.com/revanced/revanced-patches/compare/v2.150.0...v2.151.0) (2022-12-31)
+### [2.155.0](https://github.com/revanced/revanced-patches/compare/v2.154.0...v2.155.0) (2023-01-15)
 ### Bug Fixes
-* **youtube/general-ads:** restore swipe back to exit gesture ([#1405](https://github.com/revanced/revanced-patches/issues/1405)) ([2440587](https://github.com/revanced/revanced-patches/commit/24405877dd935a757fa61c7580887c1a47a25ea9))
+* bump patcher dependency version ([a5d16d7](https://github.com/revanced/revanced-patches/commit/a5d16d7a22168b519180684e0efa3b0450915d7b))
+* **youtube/open-links-directly:** use better titles and correct descriptions ([#1488](https://github.com/revanced/revanced-patches/issues/1488)) ([2874bbe](https://github.com/revanced/revanced-patches/commit/2874bbef154d28e56b5928048a255409a956a012))
 ### Features
-* **youtube:** `copy-video-url` patch ([#1402](https://github.com/revanced/revanced-patches/issues/1402)) ([bf982e8](https://github.com/revanced/revanced-patches/commit/bf982e8d7765c2a89a5475b6db8b203a3ac4ddf9))
+* **youtube:** remove `fix-playback` patch ([edcb6cc](https://github.com/revanced/revanced-patches/commit/edcb6cc94961aaebe2df884db3049b2afa79f38f))
 
   
 **App Versions:**  
-Music (arm64-v8a): 1.3.3  
-Spotify: 8.7.92.521  
 YouTube: 17.49.37  
+Music (arm64-v8a): 5.39.52  
 
 Install [Vanced Microg](https://github.com/TeamVanced/VancedMicroG/releases) to be able to use non-root YouTube or Music  
 
