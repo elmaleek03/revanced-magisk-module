@@ -47,35 +47,47 @@ jobs:
       - name: Install ImageMagick for PNG fix
         run: sudo apt-get install -y -q imagemagick
 
-      - name: Build modules/APKs
+            - name: Build modules/APKs
         run: |
+          sudo apt-get install -y -q imagemagick > /dev/null
+
+          fix_tiktok_apk() {
+            # Fix bs6.png inside the source APK that j-hc feeds to the patcher
+            find temp/ -path "*tiktok*" -name "*.apk" \
+              ! -path "*/patcher/*" \
+              ! -path "*/build/*" | while read APK; do
+              echo "[*] Checking source APK: $APK"
+              mkdir -p _png_fix
+              unzip -q "$APK" "res/drawable-xxhdpi/bs6.png" -d _png_fix/ 2>/dev/null || continue
+              PNG="_png_fix/res/drawable-xxhdpi/bs6.png"
+              if [ ! -f "$PNG" ]; then rm -rf _png_fix; continue; fi
+              MAGIC=$(xxd -p -l 8 "$PNG")
+              echo "[*] Magic bytes: $MAGIC"
+              if [ "$MAGIC" != "89504e470d0a1a0a" ]; then
+                echo "[*] Corrupt PNG found, fixing..."
+                convert "$PNG" "$PNG" 2>/dev/null
+                cd _png_fix && zip -0 "../$APK" res/drawable-xxhdpi/bs6.png && cd ..
+                echo "[✓] Fixed bs6.png inside source APK: $APK"
+              fi
+              rm -rf _png_fix
+            done
+          }
+
           build_cmd() {
             if [ -f "config.json" ]; then ./build.sh config.json; else ./build.sh config.toml; fi
           }
 
+          # First run: let j-hc download the APK, fail at aapt2
           build_cmd || {
-            echo "[!] Build failed — attempting TikTok PNG fix..."
-            sudo apt-get install -y -q imagemagick > /dev/null
-
-            # Target the already-extracted res directory directly
-            find temp/ -path "*tiktok*" -name "bs6.png" | while read PNG; do
-              echo "[*] Found: $PNG"
-              MAGIC=$(xxd -p -l 8 "$PNG")
-              echo "[*] Magic bytes: $MAGIC"
-              if [ "$MAGIC" != "89504e470d0a1a0a" ]; then
-                echo "[*] Corrupt PNG detected, fixing..."
-                convert "$PNG" "$PNG" 2>/dev/null && echo "[✓] Fixed: $PNG" || echo "[!] Fix failed: $PNG"
-              fi
-            done
-
-            echo "[*] Retrying build..."
+            echo "[!] Build failed — fixing bs6.png in source APK..."
+            fix_tiktok_apk
+            echo "[*] Retrying build (source APK now fixed)..."
             build_cmd
           }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: $GITHUB_REPOSITORY
           NEXT_VER_CODE: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
-
 
 
       - name: Get output
