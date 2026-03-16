@@ -44,12 +44,36 @@ jobs:
           if [ -z "$TAG" ]; then TAG=0; fi
           echo "NEXT_VER_CODE=$((TAG + 1))" >> $GITHUB_OUTPUT
 
+      - name: Install ImageMagick for PNG fix
+        run: sudo apt-get install -y -q imagemagick
+
       - name: Build modules/APKs
-        run: if [ -f "config.json" ]; then ./build.sh config.json; else ./build.sh config.toml; fi
+        run: |
+          build_cmd() {
+            if [ -f "config.json" ]; then ./build.sh config.json; else ./build.sh config.toml; fi
+          }
+
+          build_cmd || {
+            echo "[!] Build failed — attempting TikTok PNG fix..."
+            find temp/ -path "*tiktok*" -name "*.apk" | while read APK; do
+              echo "[*] Fixing corrupt PNGs in: $APK"
+              mkdir -p _png_fix
+              unzip -q "$APK" "res/drawable-xxhdpi/bs6.png" -d _png_fix/ 2>/dev/null || true
+              if [ -f "_png_fix/res/drawable-xxhdpi/bs6.png" ]; then
+                convert "_png_fix/res/drawable-xxhdpi/bs6.png" "_png_fix/res/drawable-xxhdpi/bs6.png"
+                cd _png_fix && zip -0 "../$APK" res/drawable-xxhdpi/bs6.png && cd ..
+                echo "[✓] bs6.png fixed in $APK"
+              fi
+              rm -rf _png_fix
+            done
+            echo "[*] Retrying build..."
+            build_cmd
+          }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: $GITHUB_REPOSITORY
           NEXT_VER_CODE: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
+
 
       - name: Get output
         id: get_output
