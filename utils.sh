@@ -662,8 +662,28 @@ build_rv() {
 		fi
 
 		local stock_apk_to_patch="${stock_apk}.stripped.apk"
-		cp -f "$stock_apk" "$stock_apk_to_patch"
-		if [ "$build_mode" = module ]; then
+        cp -f "$stock_apk" "$stock_apk_to_patch"
+
+        # Fix corrupt non-PNG files named .png (e.g. TikTok bs6.png is a JPEG)
+        if echo "$app_name_l" | grep -qi "tiktok"; then
+            _pngfix_tmp=$(mktemp -d)
+            unzip -q "$stock_apk_to_patch" "res/drawable-xxhdpi/bs6.png" -d "$_pngfix_tmp" 2>/dev/null
+            if [ -f "$_pngfix_tmp/res/drawable-xxhdpi/bs6.png" ]; then
+                _magic=$(xxd -p -l 8 "$_pngfix_tmp/res/drawable-xxhdpi/bs6.png")
+                if [ "$_magic" != "89504e470d0a1a0a" ]; then
+                    pr "Fixing corrupt bs6.png (magic: $_magic)..."
+                    convert "$_pngfix_tmp/res/drawable-xxhdpi/bs6.png" \
+                            "$_pngfix_tmp/res/drawable-xxhdpi/bs6.png" 2>/dev/null
+                    cd "$_pngfix_tmp" && zip -0 "$CWD/$stock_apk_to_patch" \
+                        res/drawable-xxhdpi/bs6.png && cd "$CWD"
+                    pr "[✓] bs6.png fixed in stripped APK"
+                fi
+            fi
+            rm -rf "$_pngfix_tmp"
+        fi
+
+        if [ "$build_mode" = module ]; then
+
 			zip -d "$stock_apk_to_patch" "lib/*" >/dev/null 2>&1 || :
 		else
 			if [ "$arch" = "arm64-v8a" ]; then
