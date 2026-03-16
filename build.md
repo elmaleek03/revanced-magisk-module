@@ -1,6 +1,4 @@
-Facebook: 490.0.0.63.82  
-Instagram: 420.0.0.55.74  
-Spotify: 9.1.32.399  
+Messenger: 551.0.0.48.62  
 TikTok: 36.5.4  
 
 Install [Microg](https://github.com/ReVanced/GmsCore/releases) for non-root YouTube and YT Music APKs  
