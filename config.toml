@@ -47,6 +47,7 @@ uptodown-dlurl = "https://tiktok.en.uptodown.com/android"
 build-mode = "apk"
 dpi = "360-480dpi"
 arch = "arm64-v8a"
+excluded-patches = ["settings"]
 
 [Facebook]
 enabled = false
