@@ -674,13 +674,14 @@ build_rv() {
                     pr "Fixing corrupt bs6.png (magic: $_magic)..."
                     convert "$_pngfix_tmp/res/drawable-xxhdpi/bs6.png" \
                             "$_pngfix_tmp/res/drawable-xxhdpi/bs6.png" 2>/dev/null
-                    cd "$_pngfix_tmp" && zip -0 "$CWD/$stock_apk_to_patch" \
-                        res/drawable-xxhdpi/bs6.png && cd "$CWD"
+                    ( cd "$_pngfix_tmp" && zip -0 "$CWD/$stock_apk_to_patch" \
+                        res/drawable-xxhdpi/bs6.png )
                     pr "[✓] bs6.png fixed in stripped APK"
                 fi
             fi
             rm -rf "$_pngfix_tmp"
         fi
+
 
         if [ "$build_mode" = module ]; then
 			zip -d "$stock_apk_to_patch" "lib/*" >/dev/null 2>&1 || :
