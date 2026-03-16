@@ -49,45 +49,40 @@ jobs:
 
       - name: Build modules/APKs
         run: |
-          sudo apt-get install -y -q imagemagick > /dev/null
+          sudo apt-get install -y -q imagemagick inotify-tools > /dev/null
 
-          fix_tiktok_apk() {
-            # Fix bs6.png inside the source APK that j-hc feeds to the patcher
-            find temp/ -path "*tiktok*" -name "*.apk" \
-              ! -path "*/patcher/*" \
-              ! -path "*/build/*" | while read APK; do
-              echo "[*] Checking source APK: $APK"
-              mkdir -p _png_fix
-              unzip -q "$APK" "res/drawable-xxhdpi/bs6.png" -d _png_fix/ 2>/dev/null || continue
-              PNG="_png_fix/res/drawable-xxhdpi/bs6.png"
-              if [ ! -f "$PNG" ]; then rm -rf _png_fix; continue; fi
-              MAGIC=$(xxd -p -l 8 "$PNG")
-              echo "[*] Magic bytes: $MAGIC"
-              if [ "$MAGIC" != "89504e470d0a1a0a" ]; then
-                echo "[*] Corrupt PNG found, fixing..."
-                convert "$PNG" "$PNG" 2>/dev/null
-                cd _png_fix && zip -0 "../$APK" res/drawable-xxhdpi/bs6.png && cd ..
-                echo "[✓] Fixed bs6.png inside source APK: $APK"
-              fi
-              rm -rf _png_fix
+          # Background watcher: fix bs6.png the moment source APK lands in temp/
+          (
+            mkdir -p temp
+            while inotifywait -q -e close_write -r temp/ 2>/dev/null; do
+              find temp/ -path "*tiktok*" -name "*.apk" \
+                ! -path "*/patcher/*" ! -path "*/build/*" | while read APK; do
+                mkdir -p _pngfix
+                unzip -q "$APK" "res/drawable-xxhdpi/bs6.png" -d _pngfix/ 2>/dev/null || continue
+                PNG="_pngfix/res/drawable-xxhdpi/bs6.png"
+                [ -f "$PNG" ] || { rm -rf _pngfix; continue; }
+                MAGIC=$(xxd -p -l 8 "$PNG")
+                if [ "$MAGIC" != "89504e470d0a1a0a" ]; then
+                  convert "$PNG" "$PNG" 2>/dev/null
+                  cd _pngfix && zip -0 "../$APK" res/drawable-xxhdpi/bs6.png && cd ..
+                  echo "[✓] Auto-fixed bs6.png in $APK"
+                fi
+                rm -rf _pngfix
+              done
             done
-          }
+          ) &
+          WATCHER_PID=$!
 
-          build_cmd() {
-            if [ -f "config.json" ]; then ./build.sh config.json; else ./build.sh config.toml; fi
-          }
+          if [ -f "config.json" ]; then ./build.sh config.json; else ./build.sh config.toml; fi
+          BUILD_EXIT=$?
 
-          # First run: let j-hc download the APK, fail at aapt2
-          build_cmd || {
-            echo "[!] Build failed — fixing bs6.png in source APK..."
-            fix_tiktok_apk
-            echo "[*] Retrying build (source APK now fixed)..."
-            build_cmd
-          }
+          kill $WATCHER_PID 2>/dev/null
+          exit $BUILD_EXIT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: $GITHUB_REPOSITORY
           NEXT_VER_CODE: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
+
 
 
       - name: Get output
