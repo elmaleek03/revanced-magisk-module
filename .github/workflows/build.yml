@@ -47,7 +47,7 @@ jobs:
       - name: Install ImageMagick for PNG fix
         run: sudo apt-get install -y -q imagemagick
 
-            - name: Build modules/APKs
+      - name: Build modules/APKs
         run: |
           sudo apt-get install -y -q imagemagick > /dev/null
 
