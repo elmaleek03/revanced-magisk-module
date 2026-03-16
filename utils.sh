@@ -683,7 +683,6 @@ build_rv() {
         fi
 
         if [ "$build_mode" = module ]; then
-
 			zip -d "$stock_apk_to_patch" "lib/*" >/dev/null 2>&1 || :
 		else
 			if [ "$arch" = "arm64-v8a" ]; then
